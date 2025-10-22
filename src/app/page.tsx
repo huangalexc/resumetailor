@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { ClassicTemplate } from '@/components/resume/templates/ClassicTemplate'
 import { ResumeData } from '@/lib/types/resume'
 import { Button } from '@/components/ui/button'
@@ -72,9 +73,11 @@ export default function Home() {
             AI-powered resume tailoring and cover letter generation. Transform your resume for any job in under 2 minutes.
           </p>
           <div className="flex gap-4 justify-center">
-            <Button size="lg" className="text-lg px-8">
-              Start Building Resume
-            </Button>
+            <Link href="/resume/builder">
+              <Button size="lg" className="text-lg px-8">
+                Start Building Resume
+              </Button>
+            </Link>
             <Button size="lg" variant="outline" className="text-lg px-8">
               View Demo
             </Button>
