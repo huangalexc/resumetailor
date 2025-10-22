@@ -1,0 +1,69 @@
+// Prisma Schema for Resume Tailor MVP
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  resumes   Resume[]
+}
+
+model Resume {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Structured resume data as JSON
+  data         Json          // Matches PRD schema
+  template     String        @default("classic")
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  applications Application[]
+
+  @@index([userId])
+}
+
+model JobDescription {
+  id              String        @id @default(cuid())
+  companyName     String?
+  roleTitle       String?
+  employerWebsite String?
+  description     String        @db.Text
+  createdAt       DateTime      @default(now())
+
+  applications    Application[]
+}
+
+model Application {
+  id                String         @id @default(cuid())
+  resumeId          String
+  resume            Resume         @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  jobDescriptionId  String
+  jobDescription    JobDescription @relation(fields: [jobDescriptionId], references: [id], onDelete: Cascade)
+
+  // AI-tailored resume data
+  tailoredResume    Json
+
+  // Generated cover letter
+  coverLetter       String?        @db.Text
+
+  status            String         @default("draft") // draft, applied, etc.
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([resumeId])
+  @@index([jobDescriptionId])
+}
