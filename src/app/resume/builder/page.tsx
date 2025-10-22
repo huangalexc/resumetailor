@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useResumeStore } from '@/hooks/useResumeStore'
 import { ClassicTemplate } from '@/components/resume/templates/ClassicTemplate'
 import { ContactInfoForm } from '@/components/resume/forms/ContactInfoForm'
@@ -19,6 +20,7 @@ const steps = [
 ]
 
 export default function ResumeBuilderPage() {
+  const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const { currentResume } = useResumeStore()
 
@@ -116,8 +118,8 @@ export default function ResumeBuilderPage() {
                   Your resume is ready. You can now tailor it to a job description or download it.
                 </p>
                 <div className="flex gap-4 justify-center">
-                  <Button size="lg">
-                    Tailor to Job
+                  <Button size="lg" onClick={() => router.push('/job-description')}>
+                    Tailor to Job →
                   </Button>
                   <Button size="lg" variant="outline">
                     Download PDF
