@@ -10,6 +10,7 @@ import { ExperienceForm } from '@/components/resume/forms/ExperienceForm'
 import { EducationForm } from '@/components/resume/forms/EducationForm'
 import { SkillsForm } from '@/components/resume/forms/SkillsForm'
 import { Button } from '@/components/ui/button'
+import { downloadResumePdf } from '@/lib/utils/pdfGenerator'
 
 const steps = [
   { id: 1, name: 'Contact Info', component: ContactInfoForm },
@@ -23,6 +24,7 @@ export default function ResumeBuilderPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const { currentResume } = useResumeStore()
+  const [isDownloading, setIsDownloading] = useState(false)
 
   const CurrentFormComponent = steps.find((s) => s.id === currentStep)?.component
 
@@ -49,6 +51,25 @@ export default function ResumeBuilderPage() {
       currentResume?.skills &&
       currentResume.skills.length > 0
     )
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!currentResume || !isResumeComplete()) return
+
+    setIsDownloading(true)
+
+    try {
+      await downloadResumePdf(currentResume)
+    } catch (error) {
+      console.error('PDF download error:', error)
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Failed to download PDF. Please try again.'
+      )
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   return (
@@ -121,8 +142,13 @@ export default function ResumeBuilderPage() {
                   <Button size="lg" onClick={() => router.push('/job-description')}>
                     Tailor to Job →
                   </Button>
-                  <Button size="lg" variant="outline">
-                    Download PDF
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={handleDownloadPdf}
+                    disabled={isDownloading}
+                  >
+                    {isDownloading ? 'Generating PDF...' : 'Download PDF'}
                   </Button>
                 </div>
               </div>

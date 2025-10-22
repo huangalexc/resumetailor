@@ -12,6 +12,10 @@ import {
   CoverLetterRequest,
   CoverLetterResponse,
 } from '@/app/api/cover-letter/route'
+import {
+  downloadResumePdf,
+  generateTailoredFilename,
+} from '@/lib/utils/pdfGenerator'
 
 export default function TailorPage() {
   const router = useRouter()
@@ -31,6 +35,7 @@ export default function TailorPage() {
   } = useApplicationStore()
 
   const [showComparison, setShowComparison] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   // Auto-trigger tailoring on mount if not already done
   useEffect(() => {
@@ -108,6 +113,30 @@ export default function TailorPage() {
         false,
         error instanceof Error ? error.message : 'Unknown error occurred'
       )
+    }
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!tailoredResumeData) return
+
+    setIsDownloading(true)
+
+    try {
+      const filename = generateTailoredFilename(
+        currentResume?.contactInfo.name || 'Resume',
+        jobDescription?.companyName
+      )
+
+      await downloadResumePdf(tailoredResumeData, filename)
+    } catch (error) {
+      console.error('PDF download error:', error)
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Failed to download PDF. Please try again.'
+      )
+    } finally {
+      setIsDownloading(false)
     }
   }
 
@@ -366,8 +395,12 @@ export default function TailorPage() {
             >
               ← Edit Job Description
             </Button>
-            <Button size="lg" onClick={() => alert('PDF download coming in Phase 5!')}>
-              Download Tailored Resume
+            <Button
+              size="lg"
+              onClick={handleDownloadPdf}
+              disabled={isDownloading}
+            >
+              {isDownloading ? 'Generating PDF...' : 'Download Tailored Resume'}
             </Button>
             <Button
               variant="outline"
