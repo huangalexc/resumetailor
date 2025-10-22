@@ -11,10 +11,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { useResumeStore } from '@/hooks/useResumeStore'
+import { useApplicationStore } from '@/hooks/useApplicationStore'
 
 export default function JobDescriptionPage() {
   const router = useRouter()
   const { currentResume } = useResumeStore()
+  const { setJobDescription } = useApplicationStore()
   const [charCount, setCharCount] = useState(0)
   const [extractedMetadata, setExtractedMetadata] = useState<{
     companyName?: string
@@ -60,11 +62,15 @@ export default function JobDescriptionPage() {
   }, [descriptionValue, setValue, watch])
 
   const onSubmit = async (data: JobDescriptionInput) => {
-    // TODO: Save to database via API
-    console.log('Job Description Data:', data)
+    // Save job description to application store
+    setJobDescription({
+      description: data.description,
+      companyName: data.companyName,
+      roleTitle: data.roleTitle,
+      employerWebsite: data.employerWebsite,
+    })
 
-    // For now, navigate to a placeholder tailoring page
-    // In Phase 4, this will trigger AI tailoring
+    // Navigate to tailoring page
     router.push('/resume/tailor')
   }
 
