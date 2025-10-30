@@ -1,8 +1,26 @@
 import { FileText, Sparkles, Target } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
+      {/* Navigation */}
+      <nav className="border-b border-border">
+        <div className="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center">
+            <Link href="/" className="text-xl font-bold text-foreground">
+              Resume Tailor
+            </Link>
+            <Link
+              href="/login"
+              className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+            >
+              Sign In
+            </Link>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <main className="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
@@ -15,18 +33,18 @@ export default function Home() {
             more interviews.
           </p>
           <div className="mt-10 flex items-center justify-center gap-4">
-            <a
-              href="/dashboard"
+            <Link
+              href="/register"
               className="rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
             >
               Get Started
-            </a>
-            <a
-              href="/learn-more"
+            </Link>
+            <Link
+              href="/login"
               className="rounded-lg px-6 py-3 text-sm font-semibold text-foreground border border-border hover:bg-accent transition-colors"
             >
-              Learn More
-            </a>
+              Sign In
+            </Link>
           </div>
         </div>
 
