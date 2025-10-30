@@ -3,14 +3,14 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useResumeStore } from '@/hooks/useResumeStore'
-import { ClassicTemplate } from '@/components/resume/templates/ClassicTemplate'
 import { ContactInfoForm } from '@/components/resume/forms/ContactInfoForm'
 import { SummaryForm } from '@/components/resume/forms/SummaryForm'
 import { ExperienceForm } from '@/components/resume/forms/ExperienceForm'
 import { EducationForm } from '@/components/resume/forms/EducationForm'
 import { SkillsForm } from '@/components/resume/forms/SkillsForm'
 import { Button } from '@/components/ui/button'
-import { downloadResumePdf } from '@/lib/utils/pdfGenerator'
+import { ResumeData } from '@/lib/types/resume'
+import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
 
 const steps = [
   { id: 1, name: 'Contact Info', component: ContactInfoForm },
@@ -23,8 +23,8 @@ const steps = [
 export default function ResumeBuilderPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
-  const { currentResume } = useResumeStore()
-  const [isDownloading, setIsDownloading] = useState(false)
+  const { currentResumeData, updateLocalResumeData, createNewResume } = useResumeStore()
+  const [isCreating, setIsCreating] = useState(false)
 
   const CurrentFormComponent = steps.find((s) => s.id === currentStep)?.component
 
@@ -40,35 +40,53 @@ export default function ResumeBuilderPage() {
     }
   }
 
-  const isResumeComplete = () => {
-    return (
-      currentResume?.contactInfo &&
-      currentResume?.summary &&
-      currentResume?.experience &&
-      currentResume.experience.length > 0 &&
-      currentResume?.education &&
-      currentResume.education.length > 0 &&
-      currentResume?.skills &&
-      currentResume.skills.length > 0
-    )
+  const isStepComplete = (stepId: number): boolean => {
+    if (!currentResumeData) return false
+
+    switch (stepId) {
+      case 1: // Contact Info
+        return !!(
+          currentResumeData.contactInfo?.name &&
+          currentResumeData.contactInfo?.email
+        )
+      case 2: // Summary
+        return !!(currentResumeData.summary && currentResumeData.summary.length > 0)
+      case 3: // Experience
+        return !!(
+          currentResumeData.experience &&
+          currentResumeData.experience.length > 0
+        )
+      case 4: // Education
+        return !!(
+          currentResumeData.education &&
+          currentResumeData.education.length > 0
+        )
+      case 5: // Skills
+        return !!(currentResumeData.skills && currentResumeData.skills.length > 0)
+      default:
+        return false
+    }
   }
 
-  const handleDownloadPdf = async () => {
-    if (!currentResume || !isResumeComplete()) return
+  const isResumeComplete = (): boolean => {
+    return steps.every((step) => isStepComplete(step.id))
+  }
 
-    setIsDownloading(true)
+  const handleCreateResume = async () => {
+    if (!currentResumeData || !isResumeComplete()) return
 
+    setIsCreating(true)
     try {
-      await downloadResumePdf(currentResume)
+      const resume = await createNewResume(currentResumeData as ResumeData)
+      if (resume) {
+        // Redirect to the editor for the newly created resume
+        router.push(`/dashboard/resumes/${resume.id}/edit`)
+      }
     } catch (error) {
-      console.error('PDF download error:', error)
-      alert(
-        error instanceof Error
-          ? error.message
-          : 'Failed to download PDF. Please try again.'
-      )
+      console.error('Failed to create resume:', error)
+      alert('Failed to create resume. Please try again.')
     } finally {
-      setIsDownloading(false)
+      setIsCreating(false)
     }
   }
 
@@ -77,104 +95,125 @@ export default function ResumeBuilderPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">Build Your Resume</h1>
+          <Button
+            variant="ghost"
+            onClick={() => router.push('/dashboard')}
+            className="mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <h1 className="text-3xl font-bold text-slate-900">Create Your Resume</h1>
           <p className="text-slate-600 mt-2">
-            Fill in each section step-by-step. Your progress is automatically saved.
+            Fill in each section step-by-step. Your progress is saved locally until you finish.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Left: Form Section */}
-          <div className="space-y-6">
-            {/* Progress Steps */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex justify-between items-center mb-6">
-                {steps.map((step) => (
-                  <div
-                    key={step.id}
-                    className="flex flex-col items-center flex-1"
-                  >
+        <div className="max-w-4xl mx-auto">
+          {/* Progress Steps */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
+            <div className="flex justify-between items-center">
+              {steps.map((step, index) => (
+                <div key={step.id} className="flex items-center flex-1">
+                  <div className="flex flex-col items-center flex-1">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors ${
                         currentStep === step.id
-                          ? 'bg-blue-600 text-white'
-                          : currentStep > step.id
+                          ? 'bg-primary text-primary-foreground'
+                          : isStepComplete(step.id)
                           ? 'bg-green-500 text-white'
                           : 'bg-slate-200 text-slate-500'
                       }`}
                     >
-                      {currentStep > step.id ? '✓' : step.id}
+                      {isStepComplete(step.id) ? (
+                        <Check className="h-5 w-5" />
+                      ) : (
+                        step.id
+                      )}
                     </div>
                     <span
-                      className={`text-xs mt-2 ${
+                      className={`text-xs mt-2 text-center ${
                         currentStep === step.id
-                          ? 'text-blue-600 font-semibold'
+                          ? 'text-primary font-semibold'
                           : 'text-slate-500'
                       }`}
                     >
                       {step.name}
                     </span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Current Form */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              {CurrentFormComponent && (
-                <CurrentFormComponent
-                  onNext={handleNext}
-                  onBack={currentStep > 1 ? handleBack : undefined}
-                />
-              )}
-            </div>
-
-            {/* Complete Resume Button */}
-            {currentStep === steps.length && isResumeComplete() && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-                <h3 className="text-lg font-semibold text-green-900 mb-2">
-                  Resume Complete!
-                </h3>
-                <p className="text-green-700 mb-4">
-                  Your resume is ready. You can now tailor it to a job description or download it.
-                </p>
-                <div className="flex gap-4 justify-center">
-                  <Button size="lg" onClick={() => router.push('/job-description')}>
-                    Tailor to Job →
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={handleDownloadPdf}
-                    disabled={isDownloading}
-                  >
-                    {isDownloading ? 'Generating PDF...' : 'Download PDF'}
-                  </Button>
+                  {index < steps.length - 1 && (
+                    <div
+                      className={`h-0.5 flex-1 mx-2 ${
+                        isStepComplete(step.id)
+                          ? 'bg-green-500'
+                          : 'bg-slate-200'
+                      }`}
+                    />
+                  )}
                 </div>
-              </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Current Form */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
+            <h2 className="text-xl font-bold mb-6">
+              {steps.find((s) => s.id === currentStep)?.name}
+            </h2>
+            {CurrentFormComponent && (
+              <CurrentFormComponent
+                onNext={handleNext}
+                onBack={currentStep > 1 ? handleBack : undefined}
+              />
             )}
           </div>
 
-          {/* Right: Live Preview */}
-          <div className="lg:sticky lg:top-8 lg:h-fit">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold mb-4">Live Preview</h2>
-              <div className="border-2 border-dashed border-slate-200 rounded-lg p-4 bg-slate-50 overflow-auto max-h-[800px]">
-                {currentResume && isResumeComplete() ? (
-                  <ClassicTemplate data={currentResume as any} variant="web" />
+          {/* Navigation Buttons */}
+          <div className="flex justify-between items-center">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={currentStep === 1}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Previous
+            </Button>
+
+            {currentStep < steps.length ? (
+              <Button onClick={handleNext} disabled={!isStepComplete(currentStep)}>
+                Next
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleCreateResume}
+                disabled={!isResumeComplete() || isCreating}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isCreating ? (
+                  'Creating Resume...'
                 ) : (
-                  <div className="text-center py-12 text-slate-500">
-                    <p className="text-lg font-semibold mb-2">
-                      Preview will appear here
-                    </p>
-                    <p className="text-sm">
-                      Fill in the forms to see your resume take shape
-                    </p>
-                  </div>
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    Create Resume
+                  </>
                 )}
-              </div>
-            </div>
+              </Button>
+            )}
           </div>
+
+          {/* Completion Notice */}
+          {currentStep === steps.length && isResumeComplete() && (
+            <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-green-900 mb-2">
+                All Set!
+              </h3>
+              <p className="text-green-700">
+                Your resume is complete. Click "Create Resume" to save it and open the editor
+                where you can make further refinements.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
