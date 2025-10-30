@@ -8,6 +8,10 @@ import { ResumeLivePreview } from '@/components/resume/editor/ResumeLivePreview'
 import { SidebarNavigation } from '@/components/resume/editor/SidebarNavigation'
 import { EditorToolbar } from '@/components/resume/editor/EditorToolbar'
 import { ExperienceEditorModal } from '@/components/resume/editor/modals/ExperienceEditorModal'
+import { EducationEditorModal } from '@/components/resume/editor/modals/EducationEditorModal'
+import { SkillsEditorModal } from '@/components/resume/editor/modals/SkillsEditorModal'
+import { SummaryEditorModal } from '@/components/resume/editor/modals/SummaryEditorModal'
+import { ContactEditorModal } from '@/components/resume/editor/modals/ContactEditorModal'
 
 export default function ResumeEditorPage() {
   const params = useParams()
@@ -28,6 +32,7 @@ export default function ResumeEditorPage() {
 
   const [activeModal, setActiveModal] = useState<'experience' | 'education' | 'skills' | 'summary' | 'contact' | null>(null)
   const [editingExperienceIndex, setEditingExperienceIndex] = useState<number | null>(null)
+  const [editingEducationIndex, setEditingEducationIndex] = useState<number | null>(null)
 
   // Fetch resume on mount
   useEffect(() => {
@@ -53,10 +58,17 @@ export default function ResumeEditorPage() {
     setActiveModal('experience')
   }
 
+  // Handle modal open for education
+  const openEducationModal = (index?: number) => {
+    setEditingEducationIndex(index !== undefined ? index : null)
+    setActiveModal('education')
+  }
+
   // Handle modal close
   const closeModal = () => {
     setActiveModal(null)
     setEditingExperienceIndex(null)
+    setEditingEducationIndex(null)
   }
 
   if (isLoading && !currentResumeData) {
@@ -115,7 +127,7 @@ export default function ResumeEditorPage() {
         <ResumeLivePreview
           resumeData={currentResumeData}
           onEditExperience={openExperienceModal}
-          onEditEducation={() => setActiveModal('education')}
+          onEditEducation={openEducationModal}
           onEditSkills={() => setActiveModal('skills')}
           onEditSummary={() => setActiveModal('summary')}
           onEditContact={() => setActiveModal('contact')}
@@ -131,7 +143,25 @@ export default function ResumeEditorPage() {
         />
       )}
 
-      {/* Additional modals will be added in later phases */}
+      {activeModal === 'education' && (
+        <EducationEditorModal
+          isOpen={true}
+          onClose={closeModal}
+          educationIndex={editingEducationIndex}
+        />
+      )}
+
+      {activeModal === 'skills' && (
+        <SkillsEditorModal isOpen={true} onClose={closeModal} />
+      )}
+
+      {activeModal === 'summary' && (
+        <SummaryEditorModal isOpen={true} onClose={closeModal} />
+      )}
+
+      {activeModal === 'contact' && (
+        <ContactEditorModal isOpen={true} onClose={closeModal} />
+      )}
     </ResumeEditorLayout>
   )
 }
