@@ -1,0 +1,195 @@
+# PRD: AI Resume Tailor & Cover Letter Generator
+
+## 1. Overview
+
+**Goal:**  
+Build a lightweight, web-based tool that allows users to:
+- Upload or build a structured resume.
+- Paste a job description (JD).
+- Automatically tailor their resume for that specific role and company — both for **ATS optimization** and **content relevance**.
+- Optionally generate a customized cover letter using the same job details and employer name.
+
+**Core Value Proposition:**  
+Eliminate manual rewriting and reformatting when applying to jobs — users can produce a job-specific, ATS-friendly resume and cover letter in under 2 minutes.
+
+---
+
+## 2. Core Features
+
+### 2.1 Resume Builder (Structured Form Input)
+Users fill in structured fields for each section instead of free-form editing.
+
+**Sections:**
+- Contact Information  
+- Professional Summary  
+- Work Experience (multiple entries)  
+- Education  
+- Skills (comma-separated list)
+
+**Implementation Notes:**
+- Single-column layout for ATS readability.  
+- Limit styling — use standard fonts and spacing only.  
+- Store resume as structured JSON (example schema below).
+
+```json
+{
+  "template": "classic",
+  "summary": "Experienced software engineer with a background in full-stack development.",
+  "experience": [
+    {
+      "title": "Software Engineer",
+      "company": "TechCorp",
+      "bullets": [
+        "Developed scalable backend APIs using Node.js and PostgreSQL",
+        "Reduced API response times by 40%"
+      ],
+      "dates": "Jan 2021 – Present"
+    }
+  ],
+  "education": [
+    {
+      "school": "MIT",
+      "degree": "B.S. in Computer Science",
+      "dates": "2015 – 2019"
+    }
+  ],
+  "skills": ["JavaScript", "Python", "React", "AWS"]
+}
+### 2.2 Job Description Input
+- Users paste a job description (plain text only for MVP).
+- Optional fields:  
+  - Company name  
+  - Employer website  
+  - Role title
+
+---
+
+### 2.3 Resume Tailoring (AI Feature)
+Automatically rewrites or adjusts resume sections based on the JD.
+
+**Tailoring Rules:**
+1. **Summary mentions the company or role.**  
+   > e.g. “Software engineer passionate about contributing to Stripe’s developer-first products.”
+
+2. **First line of the resume highlights the most relevant experience or skill.**  
+   > e.g. If JD mentions “React” → “Frontend engineer with 4+ years of React and TypeScript experience.”
+
+3. **Metrics connect to the role.**  
+   > e.g. If JD mentions “scaling APIs,” rewrite bullets to emphasize scale or impact.
+
+**Process:**
+- Pass JD + current resume JSON to LLM prompt.
+- Model rewrites Summary and Experience bullets.
+- Model adds missing relevant keywords (for ATS optimization).
+- Output new JSON with tailored text.
+- Show side-by-side diff or “before/after” preview (optional stretch goal).
+
+---
+
+### 2.4 ATS Optimization
+- Templates are **ATS-safe**:
+  - Single-column
+  - No tables, icons, or images
+  - Standard fonts (Arial, Calibri, Times)
+  - Clear section headers
+- Offer **“ATS Preview”** — plain-text view of resume to simulate parsing.
+
+---
+
+### 2.5 Cover Letter Generator
+Generate a personalized cover letter from:
+- Tailored resume content
+- Job description
+- Employer name/website
+
+**AI Prompt Logic:**
+> “Write a professional, personalized cover letter for [Job Title] at [Company Name], referencing the candidate’s experience and metrics from this resume JSON.”
+
+**Output:**
+- ~150–250 words  
+- Includes one paragraph referencing company/product  
+- Tone: confident, concise, professional  
+- Option to edit or regenerate
+
+---
+
+### 2.6 Export Options
+- **PDF export (required)** — generated via Puppeteer or pdfmake.
+- **DOCX export (stretch goal)** — using `docx` npm library or similar.
+- Both formats maintain ATS-safe formatting.
+
+---
+
+## 3. User Flow
+
+1. **Landing Page:** Choose “Start Resume” or “Paste Job Description.”  
+2. **Step 1:** Fill in structured resume fields.  
+3. **Step 2:** Paste JD (and optionally company name/website).  
+4. **Step 3:** Click **“Tailor Resume”** → AI runs tailoring prompt.  
+5. **Step 4:** Review tailored resume → preview ATS-safe layout.  
+6. **Step 5:** Click **“Generate Cover Letter”** → AI generates personalized letter.  
+7. **Step 6:** Export both as PDFs.  
+
+---
+
+## 4. Technical Overview
+
+| Component | Technology |
+|------------|-------------|
+| **Frontend** | React + TailwindCSS + Zustand (state management) |
+| **Backend API** | Node.js + Express (or FastAPI if Python preferred) |
+| **Database** | PostgreSQL (store users & resume JSON) |
+| **AI Layer** | OpenAI GPT-4o-mini (for resume & cover letter rewriting) |
+| **Storage** | AWS S3 / Supabase Storage (for file exports) |
+| **PDF Generation** | Puppeteer (server-side HTML to PDF) |
+| **Auth (optional MVP)** | Supabase Auth / Firebase Auth |
+| **Deployment** | Frontend: Vercel / Backend: Railway or Render |
+
+---
+
+## 5. MVP Scope
+
+**In Scope**
+- Structured resume input  
+- ATS-safe template rendering  
+- Resume tailoring (AI rewrite of summary & experience)  
+- Cover letter generation  
+- PDF export
+
+**Out of Scope (for later phases)**
+- Template customization or rearranging sections  
+- JD scraping from URLs  
+- Multi-language support  
+- Version history  
+- Analytics or scoring dashboard  
+- Account subscription / payments  
+
+---
+
+## 6. AI Prompt Examples
+
+**Resume Tailoring Prompt:**
+> You are an expert resume writer. Given the resume JSON below and the job description, rewrite the summary and experience bullets so they:  
+> 1. Mention the company or role in the summary.  
+> 2. Start with the most relevant skills or achievements.  
+> 3. Include metrics that connect to the role.  
+> Keep the result ATS-friendly, in plain text, under 200 characters per bullet.
+
+**Cover Letter Prompt:**
+> Using the tailored resume JSON and job description, generate a 200-word cover letter addressed to [Company Name] for [Job Title]. Mention the company or product by name, show enthusiasm, and highlight one quantifiable impact from the resume.
+
+---
+
+## 7. Future Enhancements
+- **JD scraper** (extract JD text from LinkedIn/Indeed URLs)
+- **ATS scoring** (keyword match %, readability, etc.)
+- **Premium templates** (monetization)
+- **Chrome extension** (auto-fill from job postings)
+- **Portfolio or LinkedIn import** (auto-fill resume data)
+
+---
+
+## 8. Success Metrics
+- Time from JD paste → tailored resume under 2 minutes.  
+- ≥80% of exports successfully parsed by top ATS (e.g., Greenhouse, Lever).  
+- 70%+ user satisfaction on AI tailoring accuracy.
