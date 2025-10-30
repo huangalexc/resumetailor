@@ -4,7 +4,7 @@ import { signOut } from '@/../auth'
 import { getUserResumes, getResumeStats } from '@/app/actions/resume.actions'
 import { ResumeCard } from '@/components/dashboard/ResumeCard'
 import { Button } from '@/components/ui/button'
-import { Plus, FileText, Download, Settings, LogOut } from 'lucide-react'
+import { Plus, FileText, Download, Settings, LogOut, Crown } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function DashboardPage() {
@@ -33,6 +33,12 @@ export default async function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-3">
+              <Link href="/pricing">
+                <Button variant="outline" size="sm">
+                  <Crown className="h-4 w-4 mr-2" />
+                  Upgrade
+                </Button>
+              </Link>
               <Link href="/settings">
                 <Button variant="ghost" size="icon">
                   <Settings className="h-5 w-5" />
