@@ -4,11 +4,13 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema, type RegisterInput } from '@/lib/schemas/auth'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 export default function RegisterForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -44,8 +46,9 @@ export default function RegisterForm() {
         return
       }
 
-      // Redirect to login page after successful registration
-      router.push('/login?registered=true')
+      // Redirect to login page with callback URL preserved
+      const loginUrl = `/login?registered=true${callbackUrl !== '/dashboard' ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`
+      router.push(loginUrl)
     } catch (err) {
       setError('An unexpected error occurred')
     } finally {
